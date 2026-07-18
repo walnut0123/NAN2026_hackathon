@@ -15,7 +15,6 @@ public class LLMSpeedTest : MonoBehaviour
     private string serverUrl = ""; // 앱 시작 시 Gist에서 자동으로 채워짐
     private bool serverUrlReady = false;
 
-
     private string inputText = "카드게임 규칙을 한 문장으로 설명해줘";
     private string lastReply = "";
     private string statusText = "대기 중";
@@ -31,21 +30,18 @@ public class LLMSpeedTest : MonoBehaviour
     {
         float scaleFactor = Screen.width / 1080f; // 기준 해상도 대비 배율
 
-        labelStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = Mathf.RoundToInt(48 * scaleFactor)
-        };
+        // [수정 규칙 4 반영] 모바일 화면에서 비정상적으로 크지 않도록 폰트 크기를 적절하게 하향 조정
+        labelStyle = new GUIStyle(GUI.skin.label);
+        labelStyle.fontSize = Mathf.RoundToInt(24f * scaleFactor); // 기존 40f -> 24f로 최적화
         labelStyle.normal.textColor = Color.white;
+        labelStyle.wordWrap = true;
 
-        textFieldStyle = new GUIStyle(GUI.skin.textField)
-        {
-            fontSize = Mathf.RoundToInt(48 * scaleFactor)
-        };
+        textFieldStyle = new GUIStyle(GUI.skin.textField);
+        textFieldStyle.fontSize = Mathf.RoundToInt(24f * scaleFactor); // 기존 40f -> 24f로 최적화
+        textFieldStyle.alignment = TextAnchor.MiddleLeft;
 
-        buttonStyle = new GUIStyle(GUI.skin.button)
-        {
-            fontSize = Mathf.RoundToInt(52 * scaleFactor)
-        };
+        buttonStyle = new GUIStyle(GUI.skin.button);
+        buttonStyle.fontSize = Mathf.RoundToInt(26f * scaleFactor); // 기존 45f -> 26f로 최적화
 
         stylesInitialized = true;
     }
@@ -55,79 +51,93 @@ public class LLMSpeedTest : MonoBehaviour
         StartCoroutine(FetchServerUrl());
     }
 
-    // 앱 시작 시 Gist에서 최신 서버 주소를 읽어옴 (캐시 방지를 위해 타임스탬프 쿼리 파라미터 부착)
     IEnumerator FetchServerUrl()
     {
-        statusText = "서버 주소 조회 중...";
-
-        string cacheBustUrl = GIST_RAW_URL + "?t=" + System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        UnityWebRequest req = UnityWebRequest.Get(cacheBustUrl);
-        yield return req.SendWebRequest();
-
-        if (req.result == UnityWebRequest.Result.Success)
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(GIST_RAW_URL))
         {
-            string url = req.downloadHandler.text.Trim();
-            if (!string.IsNullOrEmpty(url) && url.StartsWith("http"))
+            yield return webRequest.SendWebRequest();
+
+            if (webRequest.result == UnityWebRequest.Result.Success)
             {
-                serverUrl = url;
+                string fetchedUrl = webRequest.downloadHandler.text.Trim();
+                if (!fetchedUrl.EndsWith("/v1/chat/completions"))
+                {
+                    if (!fetchedUrl.EndsWith("/")) fetchedUrl += "/";
+                    fetchedUrl += "v1/chat/completions";
+                }
+                serverUrl = fetchedUrl;
                 serverUrlReady = true;
-                statusText = "준비 완료";
-                Debug.Log($"[서버 주소 로드 완료] {serverUrl}");
+                statusText = "서버 URL 로드 완료 (대기 중)";
+                Debug.Log($"<color=cyan>[속도 테스트]</color> URL 매핑 성공: {serverUrl}");
             }
             else
             {
-                statusText = "서버 주소 형식 오류 (Gist 내용 확인 필요)";
-                Debug.LogError($"[Gist 내용 이상] '{url}'");
+                statusText = "서버 URL 로드 실패";
+                Debug.LogError($"[속도 테스트] Gist에서 URL을 가져오지 못했습니다: {webRequest.error}");
+            }
+        }
+    }
+
+    void OnGUI()
+    {
+        if (!stylesInitialized)
+        {
+            InitStyles();
+        }
+
+        float scaleFactor = Screen.width / 1080f;
+
+        // [수정 규칙 3 반영] 씬 전환 UI 버튼 영역(X:40, Y:-40, 크기 300x100)과의 완전히 겹치는 현상 방지
+        // 시작 Y좌표(startY)를 씬 버튼 크기와 마진을 고려하여 충분히 아래(180)로 이격했습니다.
+        float startX = 40f * scaleFactor;
+        float startY = 180f * scaleFactor; // 기존 40f -> 180f로 하향 조정하여 아래로 내림
+        float uiWidth = Screen.width - (startX * 2);
+        
+        float elementHeight = 65f * scaleFactor; // 폰트 축소에 맞춰 엘리먼트 세로 폭도 자연스럽게 조정 (기존 90f -> 65f)
+        float spacing = 15f * scaleFactor;
+
+        // 1. 상태 표시 레이블
+        GUI.Label(new Rect(startX, startY, uiWidth, elementHeight), $"상태: {statusText}", labelStyle);
+        startY += elementHeight + spacing;
+
+        // 2. 입력란 제목
+        GUI.Label(new Rect(startX, startY, uiWidth, elementHeight), "요청할 프롬프트 입력:", labelStyle);
+        startY += elementHeight + (spacing * 0.5f);
+
+        // 3. 텍스트 필드 입력창
+        inputText = GUI.TextField(new Rect(startX, startY, uiWidth, elementHeight), inputText, textFieldStyle);
+        startY += elementHeight + spacing;
+
+        // 4. 전송 버튼
+        if (serverUrlReady && !isWaiting)
+        {
+            if (GUI.Button(new Rect(startX, startY, uiWidth, elementHeight * 1.2f), "LLM 요청 전송 (속도 측정)", buttonStyle))
+            {
+                StartCoroutine(SendLLMRequest(inputText));
             }
         }
         else
         {
-            statusText = "서버 주소 조회 실패: " + req.error;
-            Debug.LogError($"[Gist 조회 실패] {req.error}");
+            string disableReason = isWaiting ? "답변을 기다리는 중..." : "서버 주소 불러오는 중...";
+            GUI.Box(new Rect(startX, startY, uiWidth, elementHeight * 1.2f), disableReason, buttonStyle);
         }
-    }
+        startY += (elementHeight * 1.2f) + (spacing * 2f);
 
-    // 화면에 입력창 + 버튼 그리기 (테스트 전용, 가장 빠르게 만들 수 있는 방식)
-    void OnGUI()
-    {
-        if (!stylesInitialized) InitStyles();
-
-        float w = Screen.width;
-        float h = Screen.height;
-
-        // 여백 및 요소 크기를 화면 비율 기준으로 계산 (1080x2340 기준 설계)
-        float margin = w * 0.03f;           // 좌우 여백
-        float labelHeight = h * 0.035f;      // 라벨 한 줄 높이
-        float fieldHeight = h * 0.06f;       // 입력창 높이
-        float buttonHeight = h * 0.07f;      // 버튼 높이
-        float spacing = h * 0.015f;          // 요소 간 간격
-
-        float y = margin;
-
-        GUI.Label(new Rect(margin, y, w - margin * 2, labelHeight), "메시지 입력:", labelStyle);
-        y += labelHeight + spacing;
-
-        inputText = GUI.TextField(new Rect(margin, y, w - margin * 2, fieldHeight), inputText, textFieldStyle);
-        y += fieldHeight + spacing;
-
-        GUI.enabled = !isWaiting && serverUrlReady;
-        if (GUI.Button(new Rect(margin, y, w * 0.35f, buttonHeight), "전송", buttonStyle))
+        // 5. AI 결과 출력 컴포넌트
+        if (!string.IsNullOrEmpty(lastReply))
         {
-            StartCoroutine(SendMessageAndMeasure(inputText));
+            GUI.Label(new Rect(startX, startY, uiWidth, elementHeight), "최근 AI 답변:", labelStyle);
+            startY += elementHeight + (spacing * 0.5f);
+            
+            float remainingHeight = Screen.height - startY - (40f * scaleFactor);
+            GUI.Label(new Rect(startX, startY, uiWidth, remainingHeight), lastReply, labelStyle);
         }
-        GUI.enabled = true;
-        y += buttonHeight + spacing * 1.5f;
-
-        GUI.Label(new Rect(margin, y, w - margin * 2, labelHeight * 1.5f), "상태: " + statusText, labelStyle);
-        y += labelHeight * 1.5f + spacing;
-
-        GUI.Label(new Rect(margin, y, w - margin * 2, h * 0.3f), "응답: " + lastReply, labelStyle);
     }
 
-    IEnumerator SendMessageAndMeasure(string message)
+    IEnumerator SendLLMRequest(string message)
     {
         isWaiting = true;
-        statusText = "요청 전송 중...";
+        statusText = "요청 중...";
 
         var payload = new
         {
@@ -146,7 +156,6 @@ public class LLMSpeedTest : MonoBehaviour
         request.downloadHandler = new DownloadHandlerBuffer();
         request.SetRequestHeader("Content-Type", "application/json");
 
-        // 시간 측정 시작
         Stopwatch stopwatch = Stopwatch.StartNew();
 
         yield return request.SendWebRequest();
@@ -161,13 +170,12 @@ public class LLMSpeedTest : MonoBehaviour
 
             lastReply = reply;
             statusText = $"성공 | 응답 시간: {elapsedMs} ms ({elapsedMs / 1000.0:F2}초)";
-
             Debug.Log($"<color=lime>[속도 테스트]</color> {elapsedMs} ms 소요 | 응답: {reply}");
         }
         else
         {
             statusText = $"실패 | 경과 시간: {elapsedMs} ms | 에러: {request.error}";
-            Debug.LogError($"[속도 테스트 실패] {elapsedMs} ms 경과 후 실패: {request.error}");
+            Debug.LogError($"[속도 테스트] API 호출 실패: {request.error}");
         }
 
         isWaiting = false;
