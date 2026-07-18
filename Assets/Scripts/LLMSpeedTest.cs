@@ -9,9 +9,11 @@ using Debug = UnityEngine.Debug;
 
 public class LLMSpeedTest : MonoBehaviour
 {
-    //private string serverUrl = "http://172.28.233.47:30000/v1/chat/completions"; // 기존 가상서버 주소
-    //private string serverUrl = "http://192.168.0.31:30000/v1/chat/completions";
-    private string serverUrl = "https://glass-voted-connecting-powered.trycloudflare.com/v1/chat/completions"; //quicktunnel 클라우드 서버 연동
+    // Gist에 저장된 "최신 리비전" 고정 주소 (커밋 해시 없는 버전 - 항상 최신 내용을 반환함)
+    private const string GIST_RAW_URL = "https://gist.githubusercontent.com/walnut0123/a0e016f97ecd1ac3588749b710584140/raw/tunnel_url";
+
+    private string serverUrl = ""; // 앱 시작 시 Gist에서 자동으로 채워짐
+    private bool serverUrlReady = false;
 
 
     private string inputText = "카드게임 규칙을 한 문장으로 설명해줘";
@@ -48,6 +50,43 @@ public class LLMSpeedTest : MonoBehaviour
         stylesInitialized = true;
     }
 
+    void Start()
+    {
+        StartCoroutine(FetchServerUrl());
+    }
+
+    // 앱 시작 시 Gist에서 최신 서버 주소를 읽어옴 (캐시 방지를 위해 타임스탬프 쿼리 파라미터 부착)
+    IEnumerator FetchServerUrl()
+    {
+        statusText = "서버 주소 조회 중...";
+
+        string cacheBustUrl = GIST_RAW_URL + "?t=" + System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        UnityWebRequest req = UnityWebRequest.Get(cacheBustUrl);
+        yield return req.SendWebRequest();
+
+        if (req.result == UnityWebRequest.Result.Success)
+        {
+            string url = req.downloadHandler.text.Trim();
+            if (!string.IsNullOrEmpty(url) && url.StartsWith("http"))
+            {
+                serverUrl = url;
+                serverUrlReady = true;
+                statusText = "준비 완료";
+                Debug.Log($"[서버 주소 로드 완료] {serverUrl}");
+            }
+            else
+            {
+                statusText = "서버 주소 형식 오류 (Gist 내용 확인 필요)";
+                Debug.LogError($"[Gist 내용 이상] '{url}'");
+            }
+        }
+        else
+        {
+            statusText = "서버 주소 조회 실패: " + req.error;
+            Debug.LogError($"[Gist 조회 실패] {req.error}");
+        }
+    }
+
     // 화면에 입력창 + 버튼 그리기 (테스트 전용, 가장 빠르게 만들 수 있는 방식)
     void OnGUI()
     {
@@ -71,7 +110,7 @@ public class LLMSpeedTest : MonoBehaviour
         inputText = GUI.TextField(new Rect(margin, y, w - margin * 2, fieldHeight), inputText, textFieldStyle);
         y += fieldHeight + spacing;
 
-        GUI.enabled = !isWaiting;
+        GUI.enabled = !isWaiting && serverUrlReady;
         if (GUI.Button(new Rect(margin, y, w * 0.35f, buttonHeight), "전송", buttonStyle))
         {
             StartCoroutine(SendMessageAndMeasure(inputText));
