@@ -1,24 +1,100 @@
-using UnityEngine;
+using System;
+using System.Collections.Generic;
 
-public enum ItemType
+public class Inventory
 {
-    Material,   // 재료
-    Consumable, // 소비품
-    Equipment   // 장비
-}
+    public IReadOnlyList<InventorySlot> Slots => slots;
+    public int Capacity => capacity;
 
-[CreateAssetMenu(fileName = "New Item Data", menuName = "Inventory/Item Data")]
-public class ItemData : ScriptableObject
-{
-    [Header("Basic Info")]
-    public string id;                   // 아이템 식별용 Unique ID (예: item_wood)
-    public string itemName;             // 표시될 아이템 이름
-    [TextArea(3, 5)]
-    public string description;          // 아이템 설명
-    public Sprite icon;                 // UI에 표시될 아이콘 이미지
+    public event Action OnInventoryChanged;
 
-    [Header("Properties")]
-    public ItemType itemType;           // 아이템 종류
-    public int maxStackCount = 99;      // 슬롯 당 최대 중첩 수
-    public GameObject worldPrefab;      // 필드 드롭/습득용 프리팹 (3~4단계에서 사용)
+    private readonly List<InventorySlot> slots;
+    private readonly int capacity;
+
+    public Inventory(int capacity)
+    {
+        this.capacity = capacity;
+        slots = new List<InventorySlot>(capacity);
+        for (int i = 0; i < capacity; i++)
+            slots.Add(new InventorySlot());
+    }
+
+    /// <summary>Returns the leftover count that couldn't be added (0 = fully added).</summary>
+    public int AddItem(ItemData item, int count)
+    {
+        if (item == null || count <= 0)
+            return count;
+
+        int remaining = count;
+
+        foreach (var slot in slots)
+        {
+            if (remaining <= 0) break;
+            if (slot.IsEmpty || slot.item != item) continue;
+
+            int space = item.maxStackCount - slot.count;
+            if (space <= 0) continue;
+
+            int add = Math.Min(space, remaining);
+            slot.count += add;
+            remaining -= add;
+        }
+
+        foreach (var slot in slots)
+        {
+            if (remaining <= 0) break;
+            if (!slot.IsEmpty) continue;
+
+            int add = Math.Min(item.maxStackCount, remaining);
+            slot.item = item;
+            slot.count = add;
+            remaining -= add;
+        }
+
+        if (remaining != count)
+            OnInventoryChanged?.Invoke();
+
+        return remaining;
+    }
+
+    public bool RemoveItem(ItemData item, int count)
+    {
+        if (item == null || count <= 0)
+            return false;
+
+        if (!HasItem(item, count))
+            return false;
+
+        int remaining = count;
+        foreach (var slot in slots)
+        {
+            if (remaining <= 0) break;
+            if (slot.IsEmpty || slot.item != item) continue;
+
+            int remove = Math.Min(slot.count, remaining);
+            slot.count -= remove;
+            remaining -= remove;
+
+            if (slot.count <= 0)
+                slot.Clear();
+        }
+
+        OnInventoryChanged?.Invoke();
+        return true;
+    }
+
+    public bool HasItem(ItemData item, int count)
+    {
+        if (item == null || count <= 0)
+            return false;
+
+        int total = 0;
+        foreach (var slot in slots)
+        {
+            if (slot.IsEmpty || slot.item != item) continue;
+            total += slot.count;
+        }
+
+        return total >= count;
+    }
 }

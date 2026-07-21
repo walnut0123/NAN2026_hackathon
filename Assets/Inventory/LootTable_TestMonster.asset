@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2dda1fa8ca3407f47beb8d98cea484f2, type: 3}
+  m_Name: LootTable_TestMonster
+  m_EditorClassIdentifier:
+  entries:
+  - itemData: {fileID: 11400000, guid: 4565fb659cf334043bb49b6d0029a0ab, type: 2}
+    dropChance: 1
+    minCount: 1
+    maxCount: 2
+  - itemData: {fileID: 11400000, guid: 2c1bc2877e73ae64fb91a022230b1db4, type: 2}
+    dropChance: 0.5
+    minCount: 1
+    maxCount: 1

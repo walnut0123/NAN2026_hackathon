@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bc09dbf9dfa03f4aa2927dac05fece1, type: 3}
+  m_Name: item_stone_axe
+  m_EditorClassIdentifier: 
+  itemId: item_stone_axe
+  itemName: "\uB3CC\uB3C4\uB07C"
+  description: 
+  icon: {fileID: 21300000, guid: 8f10c9fb580d02649b83eb872097157f, type: 3}
+  itemType: 4
+  maxStackCount: 10
+  worldPrefab: {fileID: 5745628437247855957, guid: b59b984a58e85b949bad45c9995f39fc,
+    type: 3}
+  isCombinable: 0

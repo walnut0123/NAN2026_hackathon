@@ -80,8 +80,14 @@ public class CardProjectile : MonoBehaviour
         }
     }
 
-    private void OnHitTarget()
+private void OnHitTarget()
     {
+        if (targetTransform != null)
+        {
+            var damageable = targetTransform.GetComponent<IDamageable>();
+            damageable?.TakeDamage(1);
+        }
+
         Destroy(gameObject);
     }
 

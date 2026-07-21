@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d90ec3053e2edc4fbab911cd767f6bf, type: 3}
+  m_Name: Recipe_WoodStoneAxe
+  m_EditorClassIdentifier:
+  ingredientA: {fileID: 11400000, guid: 4565fb659cf334043bb49b6d0029a0ab, type: 2}
+  ingredientB: {fileID: 11400000, guid: 2c1bc2877e73ae64fb91a022230b1db4, type: 2}
+  resultItem: {fileID: 11400000, guid: 39a8bcc8f0c2fe740bbefc3fe7ec8adc, type: 2}
+  resultCount: 1
