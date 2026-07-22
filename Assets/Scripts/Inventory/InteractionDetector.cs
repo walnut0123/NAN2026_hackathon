@@ -5,7 +5,6 @@ using UnityEngine;
 public class InteractionDetector : MonoBehaviour
 {
     [SerializeField] private PlayerInventory playerInventory;
-    [SerializeField] private KeyCode interactKey = KeyCode.E;
 
     private readonly List<IInteractable> interactablesInRange = new List<IInteractable>();
     private IInteractable currentPromptTarget;
@@ -42,9 +41,6 @@ public class InteractionDetector : MonoBehaviour
     private void Update()
     {
         UpdatePrompt();
-
-        if (Input.GetKeyDown(interactKey))
-            TryInteract();
     }
 
     public void TryInteract()

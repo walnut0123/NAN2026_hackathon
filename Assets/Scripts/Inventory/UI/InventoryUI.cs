@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class InventoryUI : MonoBehaviour
@@ -11,6 +12,7 @@ public class InventoryUI : MonoBehaviour
 
     private int? selectedSlotIndex;
     private ItemData selectedItem;
+    private bool refreshPending;
 
     private void Awake()
     {
@@ -23,7 +25,7 @@ public class InventoryUI : MonoBehaviour
         playerInventory = FindObjectOfType<PlayerInventory>();
         combinationManager = FindObjectOfType<CombinationManager>();
 
-        playerInventory.Inventory.OnInventoryChanged += Refresh;
+        playerInventory.Inventory.OnInventoryChanged += QueueRefresh;
         Refresh();
 
         UIManager.Register("Inventory", gameObject);
@@ -32,9 +34,31 @@ public class InventoryUI : MonoBehaviour
     private void OnDestroy()
     {
         if (playerInventory != null && playerInventory.Inventory != null)
-            playerInventory.Inventory.OnInventoryChanged -= Refresh;
+            playerInventory.Inventory.OnInventoryChanged -= QueueRefresh;
 
         UIManager.Unregister("Inventory");
+    }
+
+    // Inventory changes (drop/combine) are fired from inside a slot row's own Button
+    // click handler. Rebuilding the rows synchronously there would destroy the very
+    // GameObject that handler is running on, which corrupts the UI EventSystem's
+    // pointer state and throws on a later, unrelated click. Deferring one frame lets
+    // the click finish first. The pending flag collapses multiple same-frame triggers
+    // (e.g. two TryAddItem calls in a row) into a single rebuild.
+    private void QueueRefresh()
+    {
+        if (refreshPending)
+            return;
+
+        refreshPending = true;
+        StartCoroutine(RefreshNextFrame());
+    }
+
+    private IEnumerator RefreshNextFrame()
+    {
+        yield return null;
+        refreshPending = false;
+        Refresh();
     }
 
     private void Refresh()
@@ -42,12 +66,8 @@ public class InventoryUI : MonoBehaviour
         selectedSlotIndex = null;
         selectedItem = null;
 
-        // DestroyImmediate (not Destroy) because Refresh can run more than once per
-        // frame (e.g. two TryAddItem calls in a row each fire OnInventoryChanged) -
-        // Destroy defers removal to end-of-frame, so a second Refresh would still see
-        // the "old" rows and duplicate them.
         for (int i = slotContainer.childCount - 1; i >= 0; i--)
-            DestroyImmediate(slotContainer.GetChild(i).gameObject);
+            Destroy(slotContainer.GetChild(i).gameObject);
 
         var slots = playerInventory.Inventory.Slots;
         for (int i = 0; i < slots.Count; i++)

@@ -4,36 +4,11 @@ public class PlayerInventory : MonoBehaviour
 {
     [SerializeField] private int capacity = 20;
 
-    [Header("TEMP - Step 2 manual verification only (remove once UI exists)")]
-    [SerializeField] private ItemData testItemToAdd;
-    [SerializeField] private KeyCode testAddKey = KeyCode.I;
-
-    [Header("TEMP - Step 4 manual verification only (remove once UI exists)")]
-    [SerializeField] private KeyCode testDropKey = KeyCode.O;
-    [SerializeField] private int testDropSlotIndex = 0;
-
     public Inventory Inventory { get; private set; }
 
     private void Awake()
     {
         Inventory = new Inventory(capacity);
-    }
-
-    private void Update()
-    {
-        if (testItemToAdd != null && Input.GetKeyDown(testAddKey))
-        {
-            int leftover = TryAddItem(testItemToAdd, 1);
-            Debug.Log($"[PlayerInventory] TryAddItem({testItemToAdd.itemName}) leftover={leftover}");
-            LogSlots();
-        }
-
-        if (Input.GetKeyDown(testDropKey))
-        {
-            bool dropped = TryDropItem(testDropSlotIndex, 1);
-            Debug.Log($"[PlayerInventory] TryDropItem(slot {testDropSlotIndex}) success={dropped}");
-            LogSlots();
-        }
     }
 
     public int TryAddItem(ItemData item, int count)
@@ -91,16 +66,5 @@ public bool TryDropItem(int slotIndex, int count)
             basePos.y = hit.point.y + DropHeightOffset;
 
         return basePos;
-    }
-
-
-    private void LogSlots()
-    {
-        for (int i = 0; i < Inventory.Slots.Count; i++)
-        {
-            var slot = Inventory.Slots[i];
-            if (!slot.IsEmpty)
-                Debug.Log($"  Slot {i}: {slot.item.itemName} x{slot.count}");
-        }
     }
 }

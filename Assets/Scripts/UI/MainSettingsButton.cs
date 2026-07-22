@@ -11,7 +11,7 @@ public class MainSettingsButton : MonoBehaviour
 
     private void Start()
     {
-        var inventoryUI = FindObjectOfType<InventoryUI>();
+        var inventoryUI = FindObjectOfType<InventoryUI>(true);
         if (inventoryUI == null)
         {
             Debug.LogWarning("[MainSettingsButton] No InventoryUI found in the Main scene; cannot wire up settings UI.");

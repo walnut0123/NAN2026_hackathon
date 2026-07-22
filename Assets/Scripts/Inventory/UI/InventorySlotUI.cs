@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,7 +8,7 @@ public class InventorySlotUI : MonoBehaviour
     // CombineButton) instead of serialized fields, so nothing here can be dragged
     // onto the wrong reference by accident in the Inspector.
     private Image icon;
-    private Text label;
+    private TextMeshProUGUI label;
     private Button dropButton;
     private Button combineButton;
     private Image background;
@@ -21,7 +22,7 @@ public class InventorySlotUI : MonoBehaviour
     {
         background = GetComponent<Image>();
         icon = transform.Find("Icon").GetComponent<Image>();
-        label = transform.Find("Label").GetComponent<Text>();
+        label = transform.Find("Label").GetComponent<TextMeshProUGUI>();
         dropButton = transform.Find("DropButton").GetComponent<Button>();
         combineButton = transform.Find("CombineButton").GetComponent<Button>();
     }

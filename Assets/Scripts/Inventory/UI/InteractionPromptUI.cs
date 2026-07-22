@@ -1,18 +1,19 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class InteractionPromptUI : MonoBehaviour
 {
-    [SerializeField] private string interactKeyLabel = "E";
-
     // Discovered automatically instead of serialized, so nothing can be mis-wired
     // by dragging the wrong object in the Inspector.
     private InteractionDetector detector;
-    private Text promptText;
+    private TextMeshProUGUI promptText;
+    private Button interactButton;
 
     private void Awake()
     {
-        promptText = GetComponentInChildren<Text>(true);
+        promptText = GetComponentInChildren<TextMeshProUGUI>(true);
+        interactButton = GetComponent<Button>();
     }
 
     private void Start()
@@ -21,6 +22,9 @@ public class InteractionPromptUI : MonoBehaviour
         detector.OnPromptChanged += HandlePromptChanged;
         gameObject.SetActive(false);
 
+        if (interactButton != null)
+            interactButton.onClick.AddListener(() => detector.TryInteract());
+
         UIManager.Register("Interaction Prompt", gameObject);
     }
 
@@ -28,6 +32,9 @@ public class InteractionPromptUI : MonoBehaviour
     {
         if (detector != null)
             detector.OnPromptChanged -= HandlePromptChanged;
+
+        if (interactButton != null)
+            interactButton.onClick.RemoveAllListeners();
 
         UIManager.Unregister("Interaction Prompt");
     }
@@ -41,6 +48,6 @@ public class InteractionPromptUI : MonoBehaviour
         }
 
         gameObject.SetActive(true);
-        promptText.text = $"[{interactKeyLabel}] {label} 줍기";
+        promptText.text = $"{label} 줍기";
     }
 }
