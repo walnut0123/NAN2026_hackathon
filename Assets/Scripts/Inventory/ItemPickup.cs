@@ -32,6 +32,10 @@ public class ItemPickup : MonoBehaviour, IInteractable
         }
         else if (destroyOnFullPickup)
         {
+            var entity = GetComponent<PersistentWorldEntity>();
+            if (entity != null)
+                GameManager.Instance?.MarkWorldObjectRemoved(entity.Id);
+
             Destroy(gameObject);
         }
     }

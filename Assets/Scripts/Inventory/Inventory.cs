@@ -97,4 +97,22 @@ public class Inventory
 
         return total >= count;
     }
+
+    /// <summary>Directly places an item into a slot by index, bypassing stacking rules. Used by the save system to restore exact slot layout.</summary>
+    public void SetSlot(int index, ItemData item, int count)
+    {
+        if (index < 0 || index >= slots.Count)
+            return;
+
+        slots[index].item = item;
+        slots[index].count = count;
+    }
+
+    public void Clear()
+    {
+        foreach (var slot in slots)
+            slot.Clear();
+    }
+
+    public void NotifyChanged() => OnInventoryChanged?.Invoke();
 }

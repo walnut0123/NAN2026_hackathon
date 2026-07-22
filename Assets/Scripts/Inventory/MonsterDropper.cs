@@ -45,6 +45,7 @@ public class MonsterDropper : MonoBehaviour
             Vector3 spawnPos = transform.position + new Vector3(offset.x, 0.4f, offset.y);
 
             var dropped = Instantiate(item.worldPrefab, spawnPos, Quaternion.identity);
+            dropped.AddComponent<DroppedItemMarker>();
 
             var pickup = dropped.GetComponent<ItemPickup>();
             if (pickup != null)

@@ -67,6 +67,7 @@ public bool TryDropItem(int slotIndex, int count)
 
         Vector3 spawnPos = GetDropPosition();
         var dropped = Instantiate(item.worldPrefab, spawnPos, Quaternion.identity);
+        dropped.AddComponent<DroppedItemMarker>();
 
         var pickup = dropped.GetComponent<ItemPickup>();
         if (pickup != null)

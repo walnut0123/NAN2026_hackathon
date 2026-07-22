@@ -28,6 +28,11 @@ public class Health : MonoBehaviour, IDamageable
             isDead = true;
             Debug.Log($"[Health] {gameObject.name} died.");
             OnDeath?.Invoke();
+
+            var entity = GetComponent<PersistentWorldEntity>();
+            if (entity != null)
+                GameManager.Instance?.MarkWorldObjectRemoved(entity.Id);
+
             Destroy(gameObject);
         }
     }
